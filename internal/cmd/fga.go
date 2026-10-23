@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -12,8 +13,6 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss/list"
-
-	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
 	"github.com/workos/workos-cli/internal/printer"
@@ -119,7 +118,7 @@ var listResourceTypesCmd = &cobra.Command{
 			Limit: 100,
 		})
 		if err != nil {
-			return errors.Errorf("error listing resource types: %v", err)
+			return fmt.Errorf("error listing resource types: %v", err)
 		}
 
 		tbl := printer.NewTable(80).Headers(
@@ -196,18 +195,18 @@ var createWarrantCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		subjectType, subjectIdRelation, valid := strings.Cut(args[0], ResourceSeparator)
 		if !valid {
-			return errors.Errorf("invalid subject: %s", args[0])
+			return fmt.Errorf("invalid subject: %s", args[0])
 		}
 		subjectId, subjectRelation, _ := strings.Cut(subjectIdRelation, RelationSeparator)
 		relation := args[1]
 		resourceType, resourceId, valid := strings.Cut(args[2], ResourceSeparator)
 		if !valid {
-			return errors.Errorf("invalid resource: %s", args[0])
+			return fmt.Errorf("invalid resource: %s", args[0])
 		}
 
 		policy, err := cmd.Flags().GetString("policy")
 		if err != nil {
-			return errors.Errorf("invalid policy flag")
+			return fmt.Errorf("invalid policy flag")
 		}
 
 		res, err := fga.WriteWarrant(
@@ -226,7 +225,7 @@ var createWarrantCmd = &cobra.Command{
 			},
 		)
 		if err != nil {
-			return errors.Errorf("error creating warrant: %v", err)
+			return fmt.Errorf("error creating warrant: %v", err)
 		}
 
 		if policy != "" {
@@ -248,13 +247,13 @@ var deleteWarrantCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		subjectType, subjectIdRelation, valid := strings.Cut(args[0], ResourceSeparator)
 		if !valid {
-			return errors.Errorf("invalid subject: %s", args[0])
+			return fmt.Errorf("invalid subject: %s", args[0])
 		}
 		subjectId, subjectRelation, _ := strings.Cut(subjectIdRelation, RelationSeparator)
 		relation := args[1]
 		resourceType, resourceId, valid := strings.Cut(args[2], ResourceSeparator)
 		if !valid {
-			return errors.Errorf("invalid resource: %s", args[0])
+			return fmt.Errorf("invalid resource: %s", args[0])
 		}
 
 		res, err := fga.WriteWarrant(
@@ -272,7 +271,7 @@ var deleteWarrantCmd = &cobra.Command{
 			},
 		)
 		if err != nil {
-			return errors.Errorf("error removing relation: %v", err)
+			return fmt.Errorf("error removing relation: %v", err)
 		}
 
 		printer.PrintMsg(fmt.Sprintf("Removed %s %s %s", args[0], args[1], args[2]))
@@ -296,7 +295,7 @@ var createResourceCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		resourceType, resourceId, valid := strings.Cut(args[0], ResourceSeparator)
 		if !valid {
-			return errors.Errorf("invalid resource: %s", args[0])
+			return fmt.Errorf("invalid resource: %s", args[0])
 		}
 
 		var meta map[string]interface{}
@@ -304,7 +303,7 @@ var createResourceCmd = &cobra.Command{
 		if len(args) == 2 {
 			err = json.Unmarshal([]byte(args[1]), &meta)
 			if err != nil {
-				return errors.Errorf("invalid resource meta: %s", args[1])
+				return fmt.Errorf("invalid resource meta: %s", args[1])
 			}
 		}
 
@@ -314,7 +313,7 @@ var createResourceCmd = &cobra.Command{
 			Meta:         meta,
 		})
 		if err != nil {
-			return errors.Errorf("error creating resource: %v", err)
+			return fmt.Errorf("error creating resource: %v", err)
 		}
 
 		if len(createdResource.Meta) > 0 {
@@ -336,27 +335,27 @@ var listResourcesCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		resourceType, err := cmd.Flags().GetString("type")
 		if err != nil {
-			return errors.Errorf("invalid type flag")
+			return fmt.Errorf("invalid type flag")
 		}
 		search, err := cmd.Flags().GetString("search")
 		if err != nil {
-			return errors.Errorf("invalid search flag")
+			return fmt.Errorf("invalid search flag")
 		}
 		limit, err := cmd.Flags().GetInt("limit")
 		if err != nil {
-			return errors.Errorf("invalid limit flag")
+			return fmt.Errorf("invalid limit flag")
 		}
 		before, err := cmd.Flags().GetString("before")
 		if err != nil {
-			return errors.Errorf("invalid before flag")
+			return fmt.Errorf("invalid before flag")
 		}
 		after, err := cmd.Flags().GetString("after")
 		if err != nil {
-			return errors.Errorf("invalid after flag")
+			return fmt.Errorf("invalid after flag")
 		}
 		order, err := cmd.Flags().GetString("order")
 		if err != nil {
-			return errors.Errorf("invalid order flag")
+			return fmt.Errorf("invalid order flag")
 		}
 		var orderFilter fga.Order
 		if order != "" {
@@ -376,7 +375,7 @@ var listResourcesCmd = &cobra.Command{
 			Order:        orderFilter,
 		})
 		if err != nil {
-			return errors.Errorf("error listing resources: %v", err)
+			return fmt.Errorf("error listing resources: %v", err)
 		}
 
 		tbl := printer.NewTable(120).Headers(
@@ -387,7 +386,7 @@ var listResourcesCmd = &cobra.Command{
 		for _, resource := range resources.Data {
 			metaString, err := json.MarshalIndent(resource.Meta, "", "    ")
 			if err != nil {
-				return errors.Errorf("error listing resources: %v", err)
+				return fmt.Errorf("error listing resources: %v", err)
 			}
 			tbl.Row(
 				resource.ResourceType,
@@ -412,13 +411,13 @@ var updateResourceCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		resourceType, resourceId, valid := strings.Cut(args[0], ResourceSeparator)
 		if !valid {
-			return errors.Errorf("invalid resource: %s", args[0])
+			return fmt.Errorf("invalid resource: %s", args[0])
 		}
 
 		var meta map[string]interface{}
 		err := json.Unmarshal([]byte(args[1]), &meta)
 		if err != nil {
-			return errors.Errorf("invalid meta: %s", args[1])
+			return fmt.Errorf("invalid meta: %s", args[1])
 		}
 
 		updatedResource, err := fga.UpdateResource(context.Background(), fga.UpdateResourceOpts{
@@ -427,7 +426,7 @@ var updateResourceCmd = &cobra.Command{
 			Meta:         meta,
 		})
 		if err != nil {
-			return errors.Errorf("error updating resource: %v", err)
+			return fmt.Errorf("error updating resource: %v", err)
 		}
 
 		printer.PrintMsg(fmt.Sprintf("Updated resource %s:%s", updatedResource.ResourceType, updatedResource.ResourceId))
@@ -444,7 +443,7 @@ var deleteResourceCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		resourceType, resourceId, valid := strings.Cut(args[0], ResourceSeparator)
 		if !valid {
-			return errors.Errorf("invalid resource: %s", args[0])
+			return fmt.Errorf("invalid resource: %s", args[0])
 		}
 
 		err := fga.DeleteResource(context.Background(), fga.DeleteResourceOpts{
@@ -452,7 +451,7 @@ var deleteResourceCmd = &cobra.Command{
 			ResourceId:   resourceId,
 		})
 		if err != nil {
-			return errors.Errorf("error deleting resource: %v", err)
+			return fmt.Errorf("error deleting resource: %v", err)
 		}
 
 		printer.PrintMsg(fmt.Sprintf("Deleted resource %s", args[0]))
@@ -469,30 +468,30 @@ var checkRelationCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		subjectType, subjectIdRelation, valid := strings.Cut(args[0], ResourceSeparator)
 		if !valid {
-			return errors.Errorf("invalid subject: %s", args[0])
+			return fmt.Errorf("invalid subject: %s", args[0])
 		}
 		subjectId, subjectRelation, _ := strings.Cut(subjectIdRelation, RelationSeparator)
 		relation := args[1]
 		resourceType, resourceId, valid := strings.Cut(args[2], ResourceSeparator)
 		if !valid {
-			return errors.Errorf("invalid resource: %s", args[0])
+			return fmt.Errorf("invalid resource: %s", args[0])
 		}
 
 		var policyContext map[string]interface{}
 		if len(args) > 3 {
 			err := json.Unmarshal([]byte(args[3]), &policyContext)
 			if err != nil {
-				return errors.Errorf("invalid context: %s", args[3])
+				return fmt.Errorf("invalid context: %s", args[3])
 			}
 		}
 
 		warrantToken, err := cmd.Flags().GetString("warrantToken")
 		if err != nil {
-			return errors.Wrap(err, "invalid warrantToken flag")
+			return wrapError(err, "invalid warrantToken flag")
 		}
 		debug, err := cmd.Flags().GetBool("debug")
 		if err != nil {
-			return errors.Wrap(err, "invalid debug flag")
+			return wrapError(err, "invalid debug flag")
 		}
 
 		warrantCheck := fga.WarrantCheck{
@@ -517,22 +516,22 @@ var checkRelationCmd = &cobra.Command{
 			},
 		)
 		if err != nil {
-			return errors.Errorf("error evaluating check: %v", err)
+			return fmt.Errorf("error evaluating check: %v", err)
 		}
 
 		warrantCheckString, err := warrantCheckAsString(warrantCheck)
 		if err != nil {
-			return errors.Errorf("invalid check: %v", err)
+			return fmt.Errorf("invalid check: %v", err)
 		}
 
 		assert, err := cmd.Flags().GetString("assert")
 		if err != nil {
-			return errors.Wrap(err, "invalid assert flag")
+			return wrapError(err, "invalid assert flag")
 		}
 		if assert != "" {
 			assertBool, err := strconv.ParseBool(assert)
 			if err != nil {
-				return errors.Errorf("invalid assertion: %s", assert)
+				return fmt.Errorf("invalid assertion: %s", assert)
 			}
 
 			if assertBool == result.Authorized() {
@@ -567,29 +566,29 @@ var queryCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		after, err := cmd.Flags().GetString("after")
 		if err != nil {
-			return errors.Wrap(err, "invalid after flag")
+			return wrapError(err, "invalid after flag")
 		}
 		before, err := cmd.Flags().GetString("before")
 		if err != nil {
-			return errors.Wrap(err, "invalid before flag")
+			return wrapError(err, "invalid before flag")
 		}
 		limit, err := cmd.Flags().GetInt("limit")
 		if err != nil {
-			return errors.Wrap(err, "invalid limit flag")
+			return wrapError(err, "invalid limit flag")
 		}
 		order, err := cmd.Flags().GetString("order")
 		if err != nil {
-			return errors.Wrap(err, "invalid order flag")
+			return wrapError(err, "invalid order flag")
 		}
 		warrantToken, err := cmd.Flags().GetString("warrantToken")
 		if err != nil {
-			return errors.Wrap(err, "invalid warrantToken flag")
+			return wrapError(err, "invalid warrantToken flag")
 		}
 		var policyContext map[string]interface{}
 		if len(args) > 1 {
 			err := json.Unmarshal([]byte(args[1]), &policyContext)
 			if err != nil {
-				return errors.Errorf("invalid context: %s", args[1])
+				return fmt.Errorf("invalid context: %s", args[1])
 			}
 		}
 
@@ -603,7 +602,7 @@ var queryCmd = &cobra.Command{
 			WarrantToken: warrantToken,
 		})
 		if err != nil {
-			return errors.Errorf("error performing query: %v", err)
+			return fmt.Errorf("error performing query: %v", err)
 		}
 
 		tbl := printer.NewTable(120).Headers(
@@ -616,7 +615,7 @@ var queryCmd = &cobra.Command{
 		for _, queryResult := range result.Data {
 			metaString, err := json.MarshalIndent(queryResult.Meta, "", "    ")
 			if err != nil {
-				return errors.Errorf("error listing resources: %v", err)
+				return fmt.Errorf("error listing resources: %v", err)
 			}
 			tbl.Row(
 				queryResult.ResourceType,
@@ -649,16 +648,16 @@ var convertSchemaCMD = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		to, err := cmd.Flags().GetString("to")
 		if err != nil {
-			return errors.Wrap(err, "invalid to flag")
+			return wrapError(err, "invalid to flag")
 		}
 		output, err := cmd.Flags().GetString("output")
 		if err != nil {
-			return errors.Wrap(err, "invalid output flag")
+			return wrapError(err, "invalid output flag")
 		}
 
 		bytes, err := os.ReadFile(args[0])
 		if err != nil {
-			return errors.Errorf("error reading input file: %v", err)
+			return fmt.Errorf("error reading input file: %v", err)
 		}
 
 		var response fga.ConvertSchemaResponse
@@ -675,14 +674,14 @@ var convertSchemaCMD = &cobra.Command{
 			var resourceTypesWithVersion fga.ConvertResourceTypesToSchemaOpts
 			err = json.Unmarshal(bytes, &resourceTypesWithVersion)
 			if err != nil {
-				return errors.Errorf("error unmarshalling resource types: %v", err)
+				return fmt.Errorf("error unmarshalling resource types: %v", err)
 			}
 			response, err = fga.ConvertResourceTypesToSchema(context.Background(), resourceTypesWithVersion)
 			if err != nil {
 				return convertSchemaError(err)
 			}
 		default:
-			return errors.Errorf("invalid conversion: %s", to)
+			return fmt.Errorf("invalid conversion: %s", to)
 		}
 
 		switch output {
@@ -720,7 +719,7 @@ var convertSchemaCMD = &cobra.Command{
 				printer.PrintJson(response)
 			}
 		default:
-			return errors.Errorf("invalid output: %s", output)
+			return fmt.Errorf("invalid output: %s", output)
 		}
 		return nil
 	},
@@ -735,7 +734,7 @@ var getSchemaCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		response, err := fga.GetSchema(context.Background())
 		if err != nil {
-			return errors.Errorf("error getting schema: %v", err)
+			return fmt.Errorf("error getting schema: %v", err)
 		}
 		convertResponse, err := fga.ConvertResourceTypesToSchema(context.Background(), fga.ConvertResourceTypesToSchemaOpts(response))
 		if err != nil {
@@ -760,7 +759,7 @@ var validateSchemaCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		bytes, err := os.ReadFile(args[0])
 		if err != nil {
-			return errors.Errorf("error reading input file: %v", err)
+			return fmt.Errorf("error reading input file: %v", err)
 		}
 
 		response, err := fga.ConvertSchemaToResourceTypes(context.Background(), fga.ConvertSchemaToResourceTypesOpts{
@@ -792,16 +791,16 @@ var applySchemaCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		verbose, err := cmd.Flags().GetBool("verbose")
 		if err != nil {
-			return errors.Wrap(err, "invalid verbose flag")
+			return wrapError(err, "invalid verbose flag")
 		}
 		strict, err := cmd.Flags().GetBool("strict")
 		if err != nil {
-			return errors.Wrap(err, "invalid strict flag")
+			return wrapError(err, "invalid strict flag")
 		}
 
 		bytes, err := os.ReadFile(args[0])
 		if err != nil {
-			return errors.Errorf("error reading input file: %v", err)
+			return fmt.Errorf("error reading input file: %v", err)
 		}
 		// Convert schema to resource types
 		response, err := fga.ConvertSchemaToResourceTypes(context.Background(), fga.ConvertSchemaToResourceTypesOpts{
@@ -840,7 +839,7 @@ var applySchemaCmd = &cobra.Command{
 
 		_, err = fga.UpdateSchema(context.Background(), fga.UpdateSchemaOpts{ResourceTypes: resourceTypeOps, Policies: policyOps})
 		if err != nil {
-			return errors.Errorf("error applying schema: %v", err)
+			return fmt.Errorf("error applying schema: %v", err)
 		}
 
 		printer.PrintMsg("Schema applied")
@@ -895,11 +894,11 @@ func parseTestFile(testFile string) (FGATestYaml, error) {
 	var testSpec FGATestYaml
 	bytes, err := os.ReadFile(testFile)
 	if err != nil {
-		return testSpec, errors.Wrap(err, "failed to read test file")
+		return testSpec, wrapError(err, "failed to read test file")
 	}
 
 	if !isTestFile(testFile) {
-		return testSpec, errors.Errorf("invalid test file format. %s", AcceptedTestFileExtensionErrorMessage)
+		return testSpec, fmt.Errorf("invalid test file format. %s", AcceptedTestFileExtensionErrorMessage)
 	}
 
 	switch {
@@ -911,13 +910,13 @@ func parseTestFile(testFile string) (FGATestYaml, error) {
 		return testSpec, errors.New("failed to parse test file: " + AcceptedTestFileExtensionErrorMessage)
 	}
 	if err != nil {
-		return testSpec, errors.Wrap(err, "failed to parse test file")
+		return testSpec, wrapError(err, "failed to parse test file")
 	}
 	// Check for duplicate test names
 	testNames := make(map[string]bool)
 	for _, t := range testSpec.Tests {
 		if testNames[t.Name] {
-			return testSpec, errors.Errorf("duplicate test name found: %s", t.Name)
+			return testSpec, fmt.Errorf("duplicate test name found: %s", t.Name)
 		}
 		testNames[t.Name] = true
 	}
@@ -929,12 +928,12 @@ func setupTestWarrants(setup FGATestSetupSection) (string, error) {
 	for _, w := range setup.Warrants {
 		subjectType, subjectIdRelation, valid := strings.Cut(w.Subject, ResourceSeparator)
 		if !valid {
-			return "", errors.Errorf("invalid subject in setup: %s", w.Subject)
+			return "", fmt.Errorf("invalid subject in setup: %s", w.Subject)
 		}
 		subjectId, subjectRelation, _ := strings.Cut(subjectIdRelation, RelationSeparator)
 		resourceType, resourceId, valid := strings.Cut(w.Resource, ResourceSeparator)
 		if !valid {
-			return "", errors.Errorf("invalid resource in setup: %s", w.Resource)
+			return "", fmt.Errorf("invalid resource in setup: %s", w.Resource)
 		}
 		batchWrites = append(batchWrites, fga.WriteWarrantOpts{
 			Op:           fga.WarrantOpCreate,
@@ -952,7 +951,7 @@ func setupTestWarrants(setup FGATestSetupSection) (string, error) {
 	if len(batchWrites) > 0 {
 		response, err := fga.BatchWriteWarrants(context.Background(), batchWrites)
 		if err != nil {
-			return "", errors.Wrap(err, "setup failed")
+			return "", wrapError(err, "setup failed")
 		}
 		return response.WarrantToken, nil
 	}
@@ -1065,7 +1064,7 @@ func teardownTest(teardown *FGATestTeardownSection) error {
 func cleanupTestResources(cmd *cobra.Command, setup FGATestSetupSection) error {
 	cleanupResources, err := cmd.Flags().GetBool("cleanup")
 	if err != nil {
-		return errors.Wrap(err, "failed to get cleanup flag")
+		return wrapError(err, "failed to get cleanup flag")
 	}
 	if cleanupResources {
 		resourceSet := make(map[string]bool)
@@ -1127,7 +1126,7 @@ func isTestFile(fileName string) bool {
 func runTestDirectory(cmd *cobra.Command, path string) (FGATestResult, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		return FGATestResult{}, errors.Wrap(err, "failed to read directory")
+		return FGATestResult{}, wrapError(err, "failed to read directory")
 	}
 	var testFiles []string
 	for _, entry := range entries {
@@ -1228,7 +1227,7 @@ Each test file must have a 'setup' section, a 'tests' array, and an optional 'te
 		path := args[0]
 		info, err := os.Stat(path)
 		if err != nil {
-			return errors.Wrap(err, "failed to stat path")
+			return wrapError(err, "failed to stat path")
 		}
 		if info.IsDir() {
 			result, err := runTestDirectory(cmd, path)

@@ -2,13 +2,13 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/workos/workos-cli/internal/list"
-	"github.com/workos/workos-cli/internal/printer"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/workos/workos-cli/internal/list"
+	"github.com/workos/workos-cli/internal/printer"
 	"github.com/workos/workos-go/v4/pkg/organizations"
 )
 
@@ -68,7 +68,7 @@ var createOrgCmd = &cobra.Command{
 			},
 		)
 		if err != nil {
-			return errors.Wrap(err, "error creating organization")
+			return wrapError(err, "error creating organization")
 		}
 
 		printer.PrintMsg("Created organization")
@@ -113,7 +113,7 @@ var updateOrgCmd = &cobra.Command{
 			orgOpts,
 		)
 		if err != nil {
-			return errors.Wrap(err, "error updating organization")
+			return wrapError(err, "error updating organization")
 		}
 
 		printer.PrintMsg("Updated organization")
@@ -136,7 +136,7 @@ var getOrgCmd = &cobra.Command{
 			},
 		)
 		if err != nil {
-			return errors.Wrap(err, "error getting organization")
+			return wrapError(err, "error getting organization")
 		}
 
 		printer.PrintJson(org)
@@ -188,7 +188,7 @@ workos organization list --domain foo-corp.com --after cursor --order asc`,
 			},
 		)
 		if err != nil {
-			return errors.Wrap(err, "error listing organizations")
+			return wrapError(err, "error listing organizations")
 		}
 
 		tbl := printer.NewTable(120).Headers(
@@ -232,7 +232,7 @@ var deleteOrgCmd = &cobra.Command{
 		)
 
 		if err != nil {
-			return errors.Wrap(err, "error deleting organization")
+			return wrapError(err, "error deleting organization")
 		}
 		printer.PrintMsg(fmt.Sprintf("Deleted organization %s", organizationId))
 		return nil
