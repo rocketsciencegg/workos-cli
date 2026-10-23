@@ -1319,7 +1319,12 @@ func buildDecisionTreeList(node fga.DecisionTreeNode) *list.List {
 	}
 
 	checkText = fmt.Sprintf("%s (%dms)", checkText, node.ProcessingTime/1000000)
-	tree := list.New(checkText).Enumerator(list.Tree)
+	tree := list.New(checkText).Enumerator(func(items list.Items, index int) string {
+		if items.Length()-1 == index {
+			return "└──"
+		}
+		return "├──"
+	})
 	for _, child := range node.Children {
 		tree.Item(buildDecisionTreeList(child))
 	}
