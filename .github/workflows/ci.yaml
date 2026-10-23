@@ -59,4 +59,4 @@ jobs:
           version: latest
           args: -v --timeout=5m
           only-new-issues: false
-          install-mode: "binary"
+          install-mode: "goinstall"
