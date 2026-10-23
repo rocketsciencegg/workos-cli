@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	stderrors "errors"
 	"fmt"
 	"io"
 	"os"
@@ -152,12 +153,12 @@ var applyResourceTypesCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			defer jsonFile.Close()
-
-			bytes, err = io.ReadAll(jsonFile)
-			if err != nil {
+			fileBytes, readErr := io.ReadAll(jsonFile)
+			closeErr := jsonFile.Close()
+			if err := stderrors.Join(readErr, closeErr); err != nil {
 				return err
 			}
+			bytes = fileBytes
 		} else {
 			bytes, err = io.ReadAll(bufio.NewReader(os.Stdin))
 			if err != nil {
