@@ -52,9 +52,12 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
-brews:
+homebrew_casks:
   -
     name: workos-cli
+    binaries:
+      - bin/workos
+    description: "Command-line interface for WorkOS"
     homepage: "https://github.com/workos/workos-cli"
     repository:
       owner: workos

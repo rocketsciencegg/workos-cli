@@ -10,13 +10,20 @@
 #### Install
 
 ```shell
-brew install workos/tap/workos-cli
+brew install --cask workos/tap/workos-cli
 ```
 
 #### Upgrade
 
 ```shell
-brew upgrade workos/tap/workos-cli
+brew upgrade --cask workos/tap/workos-cli
+```
+
+If you installed an earlier release as a formula, migrate to the cask once:
+
+```shell
+brew uninstall --formula workos/tap/workos-cli
+brew install --cask workos/tap/workos-cli
 ```
 
 ## Development
