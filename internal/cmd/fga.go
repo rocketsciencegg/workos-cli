@@ -148,13 +148,7 @@ var applyResourceTypesCmd = &cobra.Command{
 		var bytes []byte
 		var err error
 		if resourceTypesFile != "" {
-			jsonFile, err := os.Open(resourceTypesFile)
-			if err != nil {
-				return err
-			}
-			defer jsonFile.Close()
-
-			bytes, err = io.ReadAll(jsonFile)
+			bytes, err = os.ReadFile(resourceTypesFile)
 			if err != nil {
 				return err
 			}
@@ -1319,7 +1313,12 @@ func buildDecisionTreeList(node fga.DecisionTreeNode) *list.List {
 	}
 
 	checkText = fmt.Sprintf("%s (%dms)", checkText, node.ProcessingTime/1000000)
-	tree := list.New(checkText).Enumerator(list.Tree)
+	tree := list.New(checkText).Enumerator(func(items list.Items, index int) string {
+		if items.Length()-1 == index {
+			return "└──"
+		}
+		return "├──"
+	})
 	for _, child := range node.Children {
 		tree.Item(buildDecisionTreeList(child))
 	}

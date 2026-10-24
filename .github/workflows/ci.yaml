@@ -7,50 +7,76 @@ on:
     branches: [main]
 permissions:
   contents: read
-  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GOMAXPROCS: "2"
+
 jobs:
   ci:
     name: Build & Run Tests
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version: ["1.26.0", stable]
     steps:
-      - name: Setup Go Env
-        uses: actions/setup-go@v5
-        with:
-          go-version: "^1.23.0"
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 2
+          persist-credentials: false
+      - name: Setup Go Env
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ matrix.go-version }}
+          check-latest: true
       - name: Verify Go dependencies
         run: go mod verify
+      - name: Check module tidiness
+        run: go mod tidy -diff
+      - name: Check formatting
+        run: test -z "$(gofmt -l .)"
       - name: Run unit tests
-        run: go test -v ./...
+        run: go test -p 2 -race ./...
+      - name: Vet
+        run: go vet -p 2 ./...
       - name: Build CLI
-        run: go build
-        working-directory: cmd/workos
+        run: go build -p 2 ./...
+    env:
+      GOTOOLCHAIN: local
+  release-config:
+    name: Check GoReleaser configuration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: GoReleaser Check
-        uses: goreleaser/goreleaser-action@90a3faa9d0182683851fbfa97ca1a2cb983bfca3 # v6.2.1
+        uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
         with:
           distribution: goreleaser
-          version: latest
+          version: v2.19.0
           args: check
   lint:
     name: Lint (golangci)
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Go env
-        uses: actions/setup-go@v5
-        with:
-          go-version: "^1.23.0"
-          cache: false
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Go env
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+          check-latest: true
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84 # v6.5.2
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
-          version: latest
+          version: v2.15.0
           args: -v --timeout=5m
-          only-new-issues: false
-          install-mode: "binary"
+          install-mode: goinstall
