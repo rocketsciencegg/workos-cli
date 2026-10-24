@@ -148,13 +148,7 @@ var applyResourceTypesCmd = &cobra.Command{
 		var bytes []byte
 		var err error
 		if resourceTypesFile != "" {
-			jsonFile, err := os.Open(resourceTypesFile)
-			if err != nil {
-				return err
-			}
-			defer jsonFile.Close()
-
-			bytes, err = io.ReadAll(jsonFile)
+			bytes, err = os.ReadFile(resourceTypesFile)
 			if err != nil {
 				return err
 			}

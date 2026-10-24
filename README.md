@@ -1,5 +1,8 @@
 # WorkOS CLI
 
+> [!TIP]
+> The functionality for this project has been ported to [workos/cli](https://github.com/workos/cli).
+
 ## Installation
 
 ### MacOS (Homebrew)
@@ -14,6 +17,16 @@ brew install workos/tap/workos-cli
 
 ```shell
 brew upgrade workos/tap/workos-cli
+```
+
+## Development
+
+Building from source requires Go 1.26 or later.
+
+```shell
+go test -race ./...
+go vet ./...
+go build ./cmd/workos
 ```
 
 ## Usage
